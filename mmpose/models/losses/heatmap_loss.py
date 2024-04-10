@@ -27,10 +27,12 @@ class KeypointMSELoss(nn.Module):
     def __init__(self,
                  use_target_weight: bool = False,
                  skip_empty_channel: bool = False,
+                 use_heatmap_weight: bool = False,
                  loss_weight: float = 1.):
         super().__init__()
         self.use_target_weight = use_target_weight
         self.skip_empty_channel = skip_empty_channel
+        self.use_heatmap_weight = use_heatmap_weight
         self.loss_weight = loss_weight
 
     def forward(self,
@@ -109,6 +111,14 @@ class KeypointMSELoss(nn.Module):
             _mask = (target != 0).flatten(2).any(dim=2)
             ndim_pad = target.ndim - _mask.ndim
             _mask = _mask.view(_mask.shape + (1, ) * ndim_pad)
+
+            if mask is None:
+                mask = _mask
+            else:
+                mask = mask * _mask
+
+        if self.use_heatmap_weight:
+            _mask = target + 1
 
             if mask is None:
                 mask = _mask

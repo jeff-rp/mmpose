@@ -7,7 +7,7 @@ class Model(nn.Module):
         super().__init__()
 
         self.pose_estimator = init_model(
-            "projects/redpill/mobileone-s3-rtm.py",
+            "projects/redpill/ubody_mobileone-s1-ffc.py",
             None,
             device='cuda',
             cfg_options=dict(model=dict(test_cfg=dict(output_heatmaps=False)))
@@ -21,7 +21,7 @@ class Model(nn.Module):
 model = Model().eval()
 model.pose_estimator.backbone.switch_to_deploy()
 x = torch.rand((1, 3, 256, 256)).to('cuda')
-model_name = 'onnx/mobileone-s3-rtm-256x256'
+model_name = 'onnx/ubody_mobileone-s1-ffc'
 onnx_file = model_name + '.onnx'
 torch.onnx.export(model, x, onnx_file)
 # torch.onnx.export(model, x, onnx_file, input_names=['input'], output_names=['output'])

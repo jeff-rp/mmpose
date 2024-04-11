@@ -21,7 +21,7 @@ class Model(nn.Module):
 model = Model().eval()
 model.pose_estimator.backbone.switch_to_deploy()
 x = torch.rand((1, 3, 256, 256)).to('cuda')
-model_name = 'onnx/ubody_mobileone-s1-ffc'
+model_name = 'onnx/ubody_mobileone-s1-ffc-vis'
 onnx_file = model_name + '.onnx'
 torch.onnx.export(model, x, onnx_file)
 # torch.onnx.export(model, x, onnx_file, input_names=['input'], output_names=['output'])

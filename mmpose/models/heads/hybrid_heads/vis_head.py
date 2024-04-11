@@ -55,10 +55,11 @@ class VisPredictHead(BaseHead):
 
         self.use_sigmoid = loss.get('use_sigmoid', False)
 
+        in_channels = self.in_channels if type(self.in_channels) is int else self.in_channels[-1]
         modules = [
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
-            nn.Linear(self.in_channels, self.out_channels)
+            nn.Linear(in_channels, self.out_channels)
         ]
         if self.use_sigmoid:
             modules.append(nn.Sigmoid())

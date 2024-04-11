@@ -1,12 +1,12 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 300
+max_epochs = 210
 base_lr = 0.0005
 train_batch_size = 64
 accumulative_counts = 1
 val_batch_size = 32
-num_workers = 6
+num_workers = 4
 val_interval = 10
 cos_annealing_begin = 100
 data_root = '../'
@@ -53,15 +53,34 @@ model = dict(
         out_indices=(0, 1, 2, 3),
         init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
     ),
+    # head=dict(
+    #     type='FFHead',
+    #     in_channels=(96, 192, 512, 1280),
+    #     out_channels=59,
+    #     arch_type='C',
+    #     up_linear=True,
+    #     decoder=codec,
+    #     init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
+    #              if head_checkpoint is not None else None
+    # ),
     head=dict(
-        type='FFHead',
-        in_channels=(96, 192, 512, 1280),
-        out_channels=59,
-        arch_type='C',
-        up_linear=True,
-        decoder=codec,
-        init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
-                 if head_checkpoint is not None else None
+        type='VisPredictHead',
+        loss=dict(
+            type='BCELoss',
+            use_target_weight=True,
+            use_sigmoid=True,
+            loss_weight=1e-3,
+        ),
+        pose_cfg=dict(
+            type='FFHead',
+            in_channels=(96, 192, 512, 1280),
+            out_channels=59,
+            arch_type='C',
+            loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
+            decoder=codec,
+            init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
+                          if head_checkpoint is not None else None
+        )
     ),
     test_cfg=dict(
         flip_test=True,
@@ -75,7 +94,8 @@ train_pipeline = [
     dict(type='LoadImage'),
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
-    dict(type='RandomHalfBody'),
+    dict(type='RandomHalfBody',
+         min_total_keypoints=10, min_upper_keypoints=3, upper_prioritized_prob=1.0),
     dict(type='RandomBBoxTransform', scale_factor=[0.7, 1.3], rotate_factor=70),
     dict(type='TopdownAffine', input_size=codec['input_size'], use_udp=True),
     dict(type='mmdet.YOLOXHSVRandomAug'),

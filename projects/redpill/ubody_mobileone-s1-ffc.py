@@ -53,16 +53,6 @@ model = dict(
         out_indices=(0, 1, 2, 3),
         init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
     ),
-    # head=dict(
-    #     type='FFHead',
-    #     in_channels=(96, 192, 512, 1280),
-    #     out_channels=59,
-    #     arch_type='C',
-    #     up_linear=True,
-    #     decoder=codec,
-    #     init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
-    #              if head_checkpoint is not None else None
-    # ),
     head=dict(
         type='VisPredictHead',
         loss=dict(
@@ -77,10 +67,10 @@ model = dict(
             out_channels=59,
             arch_type='C',
             loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
-            decoder=codec,
-            init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
-                          if head_checkpoint is not None else None
-        )
+            decoder=codec
+        ),
+        init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
+                      if head_checkpoint is not None else None
     ),
     test_cfg=dict(
         flip_test=True,

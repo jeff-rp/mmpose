@@ -128,7 +128,8 @@ class JSDiscretLoss(nn.Module):
             for i in range(pred_hm.ndim - target_weight.ndim):
                 target_weight = target_weight.unsqueeze(-1)
 
-            loss = self.js(pred_hm * target_weight, gt_hm * target_weight)
+            # loss = self.js(pred_hm * target_weight, gt_hm * target_weight)
+            loss = self.js(pred_hm, gt_hm) * target_weight
         else:
             loss = self.js(pred_hm, gt_hm)
 

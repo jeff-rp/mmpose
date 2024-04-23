@@ -8,11 +8,11 @@ accumulative_counts = 1
 val_batch_size = 32
 num_workers = 2
 val_interval = 10
-cos_annealing_begin = 100
+cos_annealing_begin = 70
 data_root = '../'
-backbone_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/mobileone/'\
-                      'mobileone-s1_8xb32_in1k_20221110-ceeef467.pth'
+backbone_checkpoint = 'work_dirs/hand_mobileone-s1-pretrain/best_AUC_epoch_140.pth'
 head_checkpoint = None
+log_interval=100
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=val_interval)
 randomness = dict(seed=21)
@@ -36,6 +36,8 @@ auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
 codec = dict(type='UDPHeatmap', input_size=(192, 192), heatmap_size=(48, 48), sigma=1.5)
+codec = dict(type='IntegralRegressionLabel', input_size=(192, 192), heatmap_size=(12, 12),
+             sigma=0.375, normalize=True)
 
 # model settings
 model = dict(
@@ -50,22 +52,27 @@ model = dict(
         _scope_='mmpretrain',
         type='MobileOne',
         arch='s1',
-        out_indices=(0, 1, 2, 3),
+        out_indices=(3,),
         init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
     ),
     head=dict(
-        type='HeatmapHead',
+        type='DSNTRLEHead',
         in_channels=1280,
-        out_channels=21,
-        loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
+        heatmap_size=(12, 12),
+        num_joints=21,
+        loss=dict(
+            type='MultipleLossWrapper',
+            losses=[dict(type='RLELoss', use_target_weight=True),
+                    dict(type='JSDiscretLoss', use_target_weight=True)]
+        ),
+        dist_w=1.0,
         decoder=codec,
         init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
                  if head_checkpoint is not None else None
     ),
     test_cfg=dict(
         flip_test=True,
-        flip_mode='heatmap',
-        shift_heatmap=True
+        shift_coords=True
     )
 )
 
@@ -207,7 +214,7 @@ train_dataloader = dict(
 )
 val_dataloader = dict(
     batch_size=val_batch_size,
-    num_workers=num_workers//2,
+    num_workers=num_workers,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
@@ -224,7 +231,7 @@ test_dataloader = val_dataloader
 # hooks
 default_hooks = dict(
     checkpoint=dict(interval=1, save_best='AUC', rule='greater', max_keep_ckpts=1),
-    logger=dict(interval=100)
+    logger=dict(interval=log_interval)
 )
 custom_hooks = [
     dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)

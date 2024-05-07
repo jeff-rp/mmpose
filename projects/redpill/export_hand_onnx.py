@@ -1,3 +1,4 @@
+from mmengine.analysis import FlopAnalyzer
 from mmpose.apis import init_model
 import torch
 from torch import nn
@@ -11,8 +12,8 @@ class Model(nn.Module):
         super().__init__()
 
         self.pose_estimator = init_model(
-            "projects/redpill/hand_mobileone-s1_ffc-192x192.py",
-            "work_dirs/hand_mobileone-s1_ffc-192x192/best_AUC_epoch_20.pth",
+            "projects/redpill/hand_mobileone-s1_dsntrle-192x192.py",
+            "work_dirs/hand_mobileone-s1_dsntrle-192x192/best_AUC_epoch_90.pth",
             device='cuda',
             cfg_options=dict(model=dict(test_cfg=dict(output_heatmaps=False)))
         )
@@ -24,7 +25,7 @@ class Model(nn.Module):
 
     def forward(self, x):
         y = self.pose_estimator.extract_feat(x)
-        y = self.pose_estimator.head(y)
+        y = self.pose_estimator.head(y)[1]
         # x = x[:,:17]
         # x = self.pose_estimator.head.run_without_dsnt(x)
         y1 = self.hand_cls(x)
@@ -34,10 +35,14 @@ model = Model().eval()
 model.pose_estimator.backbone.switch_to_deploy()
 model.hand_cls = reparameterize_model(model.hand_cls)
 x = torch.rand((1, 3, 192, 192)).to('cuda')
-model_name = 'onnx/hand_mobileone-s1_ffc_cls_s0-192x192'
+
+flops = FlopAnalyzer(model, x)
+print('GFLOPS:', flops.total() / 1024 / 1024 / 1024)
+
+model_name = 'onnx/hand_mobileone-s1_dsntrle_cls_s0-192x192'
 onnx_file = model_name + '.onnx'
 torch.onnx.export(model, x, onnx_file, input_names=['image'],
-                  output_names=['heatmap', 'presence', 'handness'])
+                  output_names=['coordinates', 'presence', 'handness'])
 
 import onnx
 from onnxsim import simplify

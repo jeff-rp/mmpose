@@ -10,7 +10,7 @@ num_workers = 8
 val_interval = 10
 cos_annealing_begin = 50
 data_root = '../'
-backbone_checkpoint = 'work_dirs/hand_mobileone-s1_dsntrle-192x192/best_AUC_epoch_90.pth'
+backbone_checkpoint = 'work_dirs/hand_mobileone-s1_rle-160x160/best_AUC_epoch_140.pth'
 head_checkpoint = None
 log_interval=1000
 
@@ -36,7 +36,7 @@ param_scheduler = [
 auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
-codec = dict(type='RegressionLabel', input_size=(160, 160))
+codec = dict(type='RegressionLabel', input_size=(128, 128))
 
 # model settings
 model = dict(

@@ -1,18 +1,18 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 210
-base_lr = 0.0005
-train_batch_size = 64
-accumulative_counts = 1
-val_batch_size = 32
+max_epochs = 150
+base_lr = 0.001
+train_batch_size = 128
+# accumulative_counts = 1
+val_batch_size = 64
 num_workers = 4
-val_interval = 10
-cos_annealing_begin = 100
+val_interval = 1
+cos_annealing_begin = 50
 data_root = '../'
-backbone_checkpoint = None
-head_checkpoint = None
-log_interval=100
+backbone_checkpoint = "work_dirs/body_hgnetv2-b0_pretrain/best_coco_AP_epoch_30.pth"
+head_checkpoint = "work_dirs/body_hgnetv2-b0_pretrain/best_coco_AP_epoch_30.pth"
+log_interval=1000
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=val_interval)
 randomness = dict(seed=21)
@@ -20,8 +20,9 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(type='OptimWrapper',
                      optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
-                     paramwise_cfg=dict(norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True),
-                     accumulative_counts=accumulative_counts)
+                     clip_grad=dict(max_norm=35, norm_type=2),
+                     paramwise_cfg=dict(norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
+                     #accumulative_counts=accumulative_counts)
 
 # learning policy
 param_scheduler = [

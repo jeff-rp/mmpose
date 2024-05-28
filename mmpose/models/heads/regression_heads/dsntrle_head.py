@@ -29,6 +29,7 @@ class DSNTRLEHead(BaseHead):
                             dict(type='JSDiscretLoss', use_target_weight=True)]
                  ),
                  dist_w: float = 1.0,
+                 use_depthwise_deconv = True,
                  decoder: OptConfigType = None,
                  init_cfg: OptConfigType = None):
 
@@ -45,29 +46,46 @@ class DSNTRLEHead(BaseHead):
         else:
             self.decoder = None
 
-        self.deconv = nn.Sequential(
-            build_upsample_layer(dict(
-                type='deconv',
-                in_channels=in_channels,
-                out_channels=in_channels,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                output_padding=0,
-                bias=False,
-                groups=in_channels)
-            ),
-            nn.BatchNorm2d(in_channels),
-            nn.ReLU(inplace=True),
-            build_conv_layer(dict(
-                type='Conv2d',
-                in_channels=in_channels,
-                out_channels=256,
-                kernel_size=1)
-            ),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True)
-        )
+        if use_depthwise_deconv:
+            self.deconv = nn.Sequential(
+                build_upsample_layer(dict(
+                    type='deconv',
+                    in_channels=in_channels,
+                    out_channels=in_channels,
+                    kernel_size=4,
+                    stride=2,
+                    padding=1,
+                    output_padding=0,
+                    bias=False,
+                    groups=in_channels)
+                ),
+                nn.BatchNorm2d(in_channels),
+                nn.ReLU(inplace=True),
+                build_conv_layer(dict(
+                    type='Conv2d',
+                    in_channels=in_channels,
+                    out_channels=256,
+                    kernel_size=1)
+                ),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True)
+            )
+        else:
+            self.deconv = nn.Sequential(
+                build_upsample_layer(dict(
+                    type='deconv',
+                    in_channels=in_channels,
+                    out_channels=256,
+                    kernel_size=4,
+                    stride=2,
+                    padding=1,
+                    output_padding=0,
+                    bias=False)
+                ),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True)
+            )
+
         self.final_layer = build_conv_layer(dict(
             type='Conv2d',
             in_channels=256,

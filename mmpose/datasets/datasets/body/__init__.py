@@ -13,10 +13,11 @@ from .ochuman_dataset import OCHumanDataset
 from .posetrack18_dataset import PoseTrack18Dataset
 from .posetrack18_video_dataset import PoseTrack18VideoDataset
 from .coco59_dataset import Coco59Dataset
+from .coco29_dataset import Coco29Dataset
 
 __all__ = [
     'CocoDataset', 'MpiiDataset', 'MpiiTrbDataset', 'AicDataset',
     'CrowdPoseDataset', 'OCHumanDataset', 'MhpDataset', 'PoseTrack18Dataset',
     'JhmdbDataset', 'PoseTrack18VideoDataset', 'HumanArtDataset',
-    'HumanArt21Dataset', 'ExlposeDataset', 'Coco59Dataset'
+    'HumanArt21Dataset', 'ExlposeDataset', 'Coco59Dataset', 'Coco29Dataset'
 ]

@@ -1,8 +1,8 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 150
-base_lr = 0.003
+max_epochs = 210
+base_lr = 0.001
 train_batch_size = 512
 accumulative_counts = 1
 val_batch_size = 256
@@ -10,9 +10,9 @@ num_workers = 4
 val_interval = 10
 cos_annealing_begin = 50
 data_root = '../'
-backbone_checkpoint = None
+backbone_checkpoint = 'work_dirs/hand_hgnetv2-b0_pretrain/best_AUC_epoch_150.pth'
 head_checkpoint = None
-log_interval=200
+log_interval=1000
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=val_interval)
 randomness = dict(seed=21)
@@ -21,6 +21,7 @@ randomness = dict(seed=21)
 optim_wrapper = dict(type='OptimWrapper',
                      optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
                      paramwise_cfg=dict(norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True),
+                     clip_grad=dict(max_norm=35, norm_type=2),
                      accumulative_counts=accumulative_counts)
 
 # learning policy
@@ -35,7 +36,7 @@ param_scheduler = [
 auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
-codec = dict(type='UDPHeatmap', input_size=(128, 128), heatmap_size=(32, 32), sigma=1)
+codec = dict(type='RegressionLabel', input_size=(128, 128))
 
 # model settings
 custom_imports = dict(imports=['mmpretrain.models'], allow_failed_imports=False)
@@ -57,19 +58,19 @@ model = dict(
         init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
                  if backbone_checkpoint is not None else None
     ),
+    neck=dict(type='GlobalAveragePooling'),
     head=dict(
-        type='HeatmapHead',
+        type='RLEHead',
         in_channels=1024,
-        out_channels=21,
-        loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
+        num_joints=21,
+        loss=dict(type='RLELoss', use_target_weight=True),
         decoder=codec,
         init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
                  if head_checkpoint is not None else None
     ),
     test_cfg=dict(
         flip_test=True,
-        flip_mode='heatmap',
-        shift_heatmap=True
+        shift_coords=True
     )
 )
 

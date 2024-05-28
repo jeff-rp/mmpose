@@ -204,5 +204,5 @@ default_hooks = dict(
 
 # evaluators
 val_evaluator = dict(type='CocoMetric',
-                     ann_file=data_root+'coco/annotations/coco_body29_val.json')
+                     ann_file=data_root+'coco/annotations/coco_body29_val_v2.json')
 test_evaluator = val_evaluator

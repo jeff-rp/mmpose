@@ -1,18 +1,18 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 150
+max_epochs = 210
 base_lr = 0.001
-train_batch_size = 128
+train_batch_size = 96
 # accumulative_counts = 1
 val_batch_size = 64
 num_workers = 4
-val_interval = 1
-cos_annealing_begin = 50
+val_interval = 10
+cos_annealing_begin = 70
 data_root = '../'
-backbone_checkpoint = "work_dirs/body_hgnetv2-b0_pretrain/best_coco_AP_epoch_30.pth"
-head_checkpoint = "work_dirs/body_hgnetv2-b0_pretrain/best_coco_AP_epoch_30.pth"
-log_interval=1000
+backbone_checkpoint = None
+head_checkpoint = None
+log_interval=100
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=val_interval)
 randomness = dict(seed=21)
@@ -20,7 +20,7 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(type='OptimWrapper',
                      optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
-                     clip_grad=dict(max_norm=35, norm_type=2),
+                     #clip_grad=dict(max_norm=35, norm_type=2),
                      paramwise_cfg=dict(norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
                      #accumulative_counts=accumulative_counts)
 
@@ -50,18 +50,18 @@ model = dict(
     ),
     metainfo=dict(from_file='configs/_base_/datasets/coco_aic.py'),
     backbone=dict(
-        _delete_=True, # Delete the backbone field in _base_
+        #_delete_=True, # Delete the backbone field in _base_
         type='mmpretrain.TIMMBackbone', # Using timm from mmpretrain
-        model_name='hgnetv2_b0.ssld_stage1_in22k_in1k',
+        model_name='semnasnet_075.rmsp_in1k',
         features_only=True,
         pretrained=True if backbone_checkpoint is None else False,
-        out_indices=(3,),
+        out_indices=(4,),
         init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
                  if backbone_checkpoint is not None else None
     ),
     head=dict(
         type='HeatmapHead',
-        in_channels=1024,
+        in_channels=240,
         out_channels=19,
         loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
         decoder=codec,

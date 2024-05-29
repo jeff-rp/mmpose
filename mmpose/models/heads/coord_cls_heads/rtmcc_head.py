@@ -63,7 +63,9 @@ class RTMCCHead(BaseHead):
         in_featuremap_size: Tuple[int, int],
         simcc_split_ratio: float = 2.0,
         final_layer_kernel_size: int = 1,
+        use_gau: bool = True,
         gau_cfg: ConfigType = dict(
+            enabled=True,
             hidden_dims=256,
             s=128,
             expansion_factor=2,
@@ -115,18 +117,21 @@ class RTMCCHead(BaseHead):
         W = int(self.input_size[0] * self.simcc_split_ratio)
         H = int(self.input_size[1] * self.simcc_split_ratio)
 
-        self.gau = RTMCCBlock(
-            self.out_channels,
-            gau_cfg['hidden_dims'],
-            gau_cfg['hidden_dims'],
-            s=gau_cfg['s'],
-            expansion_factor=gau_cfg['expansion_factor'],
-            dropout_rate=gau_cfg['dropout_rate'],
-            drop_path=gau_cfg['drop_path'],
-            attn_type='self-attn',
-            act_fn=gau_cfg['act_fn'],
-            use_rel_bias=gau_cfg['use_rel_bias'],
-            pos_enc=gau_cfg['pos_enc'])
+        if use_gau:
+            self.gau = RTMCCBlock(
+                self.out_channels,
+                gau_cfg['hidden_dims'],
+                gau_cfg['hidden_dims'],
+                s=gau_cfg['s'],
+                expansion_factor=gau_cfg['expansion_factor'],
+                dropout_rate=gau_cfg['dropout_rate'],
+                drop_path=gau_cfg['drop_path'],
+                attn_type='self-attn',
+                act_fn=gau_cfg['act_fn'],
+                use_rel_bias=gau_cfg['use_rel_bias'],
+                pos_enc=gau_cfg['pos_enc'])
+        else:
+            self.gau = None
 
         self.cls_x = nn.Linear(gau_cfg['hidden_dims'], W, bias=False)
         self.cls_y = nn.Linear(gau_cfg['hidden_dims'], H, bias=False)
@@ -153,7 +158,7 @@ class RTMCCHead(BaseHead):
 
         feats = self.mlp(feats)  # -> B, K, hidden
 
-        feats = self.gau(feats)
+        if self.gau: feats = self.gau(feats)
 
         pred_x = self.cls_x(feats)
         pred_y = self.cls_y(feats)

@@ -7,8 +7,10 @@ from .internet_head import InternetHead
 from .mspn_head import MSPNHead
 from .vipnas_head import ViPNASHead
 from .ff_head import FFHead
+from .evitseg_head import EVitSegHead
 
 __all__ = [
     'HeatmapHead', 'CPMHead', 'MSPNHead', 'ViPNASHead',
-    'AssociativeEmbeddingHead', 'CIDHead', 'InternetHead', 'FFHead'
+    'AssociativeEmbeddingHead', 'CIDHead', 'InternetHead',
+    'FFHead', 'EVitSegHead'
 ]

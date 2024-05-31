@@ -75,7 +75,7 @@ model = dict(
     test_cfg=dict(
         flip_test=True,
         flip_mode='heatmap',
-        shift_heatmap=True
+        shift_heatmap=False
     )
 )
 

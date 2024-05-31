@@ -47,13 +47,7 @@ class ResMBConv(nn.Module):
         return x + self.point_conv(self.depth_conv(self.inverted_conv(x)))
 
 class SegHead(nn.Module):
-    def __init__(self,
-                 in_channel_list: list[int],
-                 head_width: int,
-                 head_depth: int,
-                 expand_ratio: float,
-                 final_expand: float,
-                 n_classes: int):
+    def __init__(self, in_channel_list, head_width, head_depth, expand_ratio, final_expand, n_classes):
         super(SegHead, self).__init__()
 
         self.inputs = nn.ModuleList([

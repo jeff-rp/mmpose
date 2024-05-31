@@ -67,7 +67,7 @@ model = dict(
         init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
                  if head_checkpoint is not None else None
     ),
-    test_cfg=dict(flip_test=True, flip_mode='heatmap', shift_heatmap=True)
+    test_cfg=dict(flip_test=True, flip_mode='heatmap', shift_heatmap=False)
 )
 
 # pipelines
@@ -183,7 +183,7 @@ test_dataloader = val_dataloader
 # hooks
 default_hooks = dict(
     checkpoint=dict(save_best='coco/AP', rule='greater', max_keep_ckpts=1),
-    logger=dict(interval=log_interval)
+    logger=dict(interval=log_interval, interval_exp_name=5000)
 )
 custom_hooks = [
     dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)

@@ -365,3 +365,101 @@ class HeatmapHead(BaseHead):
                 k_new = k
 
             state_dict[prefix + k_new] = v
+
+@MODELS.register_module()
+class DepthToSpaceHead(BaseHead):
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 loss: ConfigType = dict(type='KeypointMSELoss', use_target_weight=True),
+                 decoder: OptConfigType = None,
+                 init_cfg: OptConfigType = None):
+
+        if init_cfg is None:
+            init_cfg = self.default_init_cfg
+
+        super().__init__(init_cfg)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.loss_module = MODELS.build(loss)
+        if decoder is not None:
+            self.decoder = KEYPOINT_CODECS.build(decoder)
+        else:
+            self.decoder = None
+
+        self.expand = nn.Conv2d(in_channels, out_channels * 8 * 8, 1)
+        self.up = nn.PixelShuffle(8)
+
+    @property
+    def default_init_cfg(self):
+        init_cfg = [
+            dict(type='Normal', layer=['Conv2d'], std=0.001),
+            dict(type='Constant', layer='BatchNorm2d', val=1)
+        ]
+        return init_cfg
+
+    def forward(self, feats: Tuple[Tensor]) -> Tensor:
+        x = feats[-1]
+        x = self.expand(x)
+        x = self.up(x)
+        x = torch.sigmoid(x)
+        return x
+
+    def predict(self,
+                feats: Features,
+                batch_data_samples: OptSampleList,
+                test_cfg: ConfigType = {}) -> Predictions:
+        if test_cfg.get('flip_test', False):
+            # TTA: flip test -> feats = [orig, flipped]
+            assert isinstance(feats, list) and len(feats) == 2
+            flip_indices = batch_data_samples[0].metainfo['flip_indices']
+            _feats, _feats_flip = feats
+            _batch_heatmaps = self.forward(_feats)
+            _batch_heatmaps_flip = flip_heatmaps(
+                self.forward(_feats_flip),
+                flip_mode=test_cfg.get('flip_mode', 'heatmap'),
+                flip_indices=flip_indices,
+                shift_heatmap=test_cfg.get('shift_heatmap', False))
+            batch_heatmaps = (_batch_heatmaps + _batch_heatmaps_flip) * 0.5
+        else:
+            batch_heatmaps = self.forward(feats)
+
+        preds = self.decode(batch_heatmaps)
+
+        if test_cfg.get('output_heatmaps', False):
+            pred_fields = [
+                PixelData(heatmaps=hm) for hm in batch_heatmaps.detach()
+            ]
+            return preds, pred_fields
+        else:
+            return preds
+
+    def loss(self,
+             feats: Tuple[Tensor],
+             batch_data_samples: OptSampleList,
+             train_cfg: ConfigType = {}) -> dict:
+        pred_fields = self.forward(feats)
+        gt_heatmaps = torch.stack(
+            [d.gt_fields.heatmaps for d in batch_data_samples])
+        keypoint_weights = torch.cat([
+            d.gt_instance_labels.keypoint_weights for d in batch_data_samples
+        ])
+
+        # calculate losses
+        losses = dict()
+        loss = self.loss_module(pred_fields, gt_heatmaps, keypoint_weights)
+
+        losses.update(loss_kpt=loss)
+
+        # calculate accuracy
+        if train_cfg.get('compute_acc', True):
+            _, avg_acc, _ = pose_pck_accuracy(
+                output=to_numpy(pred_fields),
+                target=to_numpy(gt_heatmaps),
+                mask=to_numpy(keypoint_weights) > 0)
+
+            acc_pose = torch.tensor(avg_acc, device=gt_heatmaps.device)
+            losses.update(acc_pose=acc_pose)
+
+        return losses

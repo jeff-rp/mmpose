@@ -135,15 +135,15 @@ train_datasets = [
                           (9, 11), (10, 13), (11, 15)])
         ]
     ),
-    # dict(
-    #     type='Coco29Dataset',
-    #     data_root=data_root+'Motion-X/',
-    #     data_mode='topdown',
-    #     ann_file='annotations/motion-x_body29_train_v2.json',
-    #     data_prefix=dict(img='image/'),
-    #     sample_interval=2,
-    #     pipeline=[]
-    # )
+    dict(
+        type='Coco29Dataset',
+        data_root=data_root+'Motion-X/',
+        data_mode='topdown',
+        ann_file='annotations/motion-x_body29_train_v2.json',
+        data_prefix=dict(img='image/'),
+        sample_interval=2,
+        pipeline=[]
+    )
 ]
 
 # data loaders

@@ -52,7 +52,7 @@ class ResLiteMLA(nn.Module):
             )
             for scale in (5,)
         ])
-        self.kernel_func = nn.ReLU(inplace=True)
+        self.kernel_func = nn.ReLU(inplace=False)
 
         self.proj = nn.Sequential(
             nn.Conv2d(total_dim * (1 + len(scales)), out_channels, 1, bias=False),

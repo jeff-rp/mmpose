@@ -47,8 +47,8 @@ model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
         type='PoseDataPreprocessor',
-        mean=[127.5, 127.5, 127.5],
-        std=[255.0, 255.0, 255.0],
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True
     ),
     backbone=dict(

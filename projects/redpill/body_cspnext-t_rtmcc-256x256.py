@@ -10,9 +10,9 @@ val_interval = 10
 cos_annealing_begin = 100
 data_root = '../'
 backbone_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/'\
-                      'cspnext-tiny_udp-body7_210e-256x192-a3775292_20230504.pth'
+                      'rtmpose-t_simcc-body7_pt-body7-halpe26_700e-256x192-6020f8a6_20230605.pth'
 head_checkpoint = None
-log_interval=500
+log_interval=50
 
 # common setting
 num_keypoints = 29
@@ -47,8 +47,8 @@ model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
         type='PoseDataPreprocessor',
-        mean=[127.5, 127.5, 127.5],
-        std=[255.0, 255.0, 255.0],
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True
     ),
     backbone=dict(

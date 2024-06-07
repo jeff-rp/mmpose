@@ -1,10 +1,10 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 21
-base_lr = 0.001
-train_batch_size = 128
-val_batch_size = 64
+max_epochs = 210
+base_lr = 0.0005
+train_batch_size = 192
+val_batch_size = 96
 num_workers = 4
 val_interval = 10
 cos_annealing_begin = 70
@@ -47,8 +47,8 @@ model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
         type='PoseDataPreprocessor',
-        mean=[127.5, 127.5, 127.5],
-        std=[255.0, 255.0, 255.0],
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True
     ),
     backbone=dict(

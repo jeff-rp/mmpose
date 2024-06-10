@@ -48,7 +48,6 @@ model = dict(
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True
     ),
-    metainfo=dict(from_file='configs/_base_/datasets/coco_aic.py'),
     backbone=dict(
         #_delete_=True, # Delete the backbone field in _base_
         type='mmpretrain.TIMMBackbone', # Using timm from mmpretrain

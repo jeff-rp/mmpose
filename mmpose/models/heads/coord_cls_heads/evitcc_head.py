@@ -27,16 +27,15 @@ class ResLiteMLA(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        heads: int or None = None,
         heads_ratio: float = 1.0,
         dim=8,
         act_func=(None, None),
-        scales: tuple[int, ...] = (5,),
+        scales=(5,),
         eps=1.0e-15,
     ):
         super(ResLiteMLA, self).__init__()
         self.eps = eps
-        heads = heads or int(in_channels // dim * heads_ratio)
+        heads = int(in_channels // dim * heads_ratio)
 
         total_dim = heads * dim
 

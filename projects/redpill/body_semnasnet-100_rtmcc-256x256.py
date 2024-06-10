@@ -1,16 +1,15 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 300
-base_lr = 0.001
-train_batch_size = 128
-val_batch_size = 64
-num_workers = 4
+max_epochs = 210
+base_lr = 0.0005
+train_batch_size = 96
+val_batch_size = 48
+num_workers = 6
 val_interval = 10
-cos_annealing_begin = 100
+cos_annealing_begin = 70
 data_root = '../'
-backbone_checkpoint = 'https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/'\
-                      'rtmpose-s_simcc-body7_pt-body7_420e-256x192-acd4a1ef_20230504.pth'
+backbone_checkpoint = 'work_dirs/body_semnasnet-100_pretrain/best_coco_AP_epoch_210.pth'
 head_checkpoint = None
 log_interval=50
 
@@ -52,21 +51,18 @@ model = dict(
         bgr_to_rgb=True
     ),
     backbone=dict(
-        _scope_='mmdet',
-        type='CSPNeXt',
-        arch='P5',
-        expand_ratio=0.5,
-        deepen_factor=0.33,
-        widen_factor=0.5,
-        out_indices=(4, ),
-        channel_attention=True,
-        norm_cfg=dict(type='SyncBN'),
-        act_cfg=dict(type='SiLU'),
+        #_delete_=True, # Delete the backbone field in _base_
+        type='mmpretrain.TIMMBackbone', # Using timm from mmpretrain
+        model_name='semnasnet_100.rmsp_in1k',
+        features_only=True,
+        pretrained=True if backbone_checkpoint is None else False,
+        out_indices=(4,),
         init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
+                 if backbone_checkpoint is not None else None
     ),
     head=dict(
         type='RTMCCHead',
-        in_channels=512,
+        in_channels=320,
         out_channels=num_keypoints,
         input_size=input_size,
         in_featuremap_size=tuple([s // 32 for s in input_size]),
@@ -89,7 +85,7 @@ train_pipeline = [
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
-    dict(type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=80),
+    dict(type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=70),
     dict(type='TopdownAffine', input_size=codec['input_size'], use_udp=True),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(type='Albumentation', transforms=[
@@ -196,11 +192,11 @@ test_dataloader = val_dataloader
 # hooks
 default_hooks = dict(
     checkpoint=dict(save_best='coco/AP', rule='greater', max_keep_ckpts=1),
-    logger=dict(interval=log_interval, interval_exp_name=5000)
+    logger=dict(interval=log_interval, interval_exp_name=10000)
 )
-custom_hooks = [
-    dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)
-]
+# custom_hooks = [
+#     dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)
+# ]
 
 # evaluators
 val_evaluator = dict(type='CocoMetric',

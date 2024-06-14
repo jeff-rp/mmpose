@@ -3,13 +3,13 @@ _base_ = ['mmpose::_base_/default_runtime.py']
 # runtime
 max_epochs = 210
 base_lr = 0.0005
-train_batch_size = 64
-val_batch_size = 32
+train_batch_size = 96
+val_batch_size = 48
 num_workers = 4
 val_interval = 10
 cos_annealing_begin = 70
 data_root = '../'
-backbone_checkpoint = None
+backbone_checkpoint = "work_dirs/body_hardcorenas-c_pretrain/best_coco_AP_epoch_190.pth"
 head_checkpoint = None
 log_interval=50
 
@@ -38,16 +38,15 @@ param_scheduler = [
 auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
-codec = dict(type='SimCCLabel', input_size=input_size, sigma=(5.66, 5.66),
-             simcc_split_ratio=2.0, normalize=False, use_dark=False)
+codec = dict(type='UDPHeatmap', input_size=(256, 256), heatmap_size=(64, 64), sigma=2)
 
 # model settings
 model = dict(
     type='TopdownPoseEstimator',
     data_preprocessor=dict(
         type='PoseDataPreprocessor',
-        mean=[123.675, 116.28, 103.53],
-        std=[58.395, 57.12, 57.375],
+        mean=[127.5, 127.5, 127.5],
+        std=[255.0, 255.0, 255.0],
         bgr_to_rgb=True
     ),
     backbone=dict(
@@ -61,17 +60,10 @@ model = dict(
                  if backbone_checkpoint is not None else None
     ),
     head=dict(
-        type='RTMCCHead',
+        type='DepthToSpaceHead',
         in_channels=960,
         out_channels=num_keypoints,
-        input_size=input_size,
-        in_featuremap_size=tuple([s // 32 for s in input_size]),
-        simcc_split_ratio=codec['simcc_split_ratio'],
-        final_layer_kernel_size=7,
-        use_gau=False,
-        gau_cfg=dict(hidden_dims=256, s=128, expansion_factor=2, dropout_rate=0., drop_path=0.,
-                     act_fn='SiLU', use_rel_bias=False, pos_enc=False),
-        loss=dict(type='KLDiscretLoss', use_target_weight=True, beta=10., label_softmax=True),
+        loss=dict(type='KeypointRCELoss', use_target_weight=True),
         decoder=codec,
         init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
                  if head_checkpoint is not None else None
@@ -197,7 +189,7 @@ default_hooks = dict(
 custom_hooks = [
     dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)
 ]
-log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True, num_digits=3)
+#log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True, num_digits=3)
 
 # evaluators
 val_evaluator = dict(type='CocoMetric',

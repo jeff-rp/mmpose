@@ -37,7 +37,7 @@ param_scheduler = [
 auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
-codec = dict(type='UDPHeatmap', input_size=(256, 256), heatmap_size=(64, 64), sigma=1)
+codec = dict(type='UDPHeatmap', input_size=(256, 256), heatmap_size=(64, 64), sigma=2)
 
 # model settings
 model = dict(

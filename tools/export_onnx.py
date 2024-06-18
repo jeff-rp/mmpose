@@ -7,8 +7,8 @@ class Model(nn.Module):
         super().__init__()
 
         self.pose_estimator = init_model(
-            "projects/redpill/body_cspnext-t_rtmcc-256x256.py",
-            None,
+            "projects/redpill/body_hardcorenas-c_lhr-256x256.py",
+            "work_dirs/body_hardcorenas-c_lhr-256x256/best_coco_AP_epoch_210.pth",
             device='cuda',
             cfg_options=dict(model=dict(test_cfg=dict(output_heatmaps=False)))
         )
@@ -21,11 +21,11 @@ class Model(nn.Module):
 model = Model().eval()
 # model.pose_estimator.backbone.switch_to_deploy()
 x = torch.rand((1, 3, 256, 256)).to('cuda')
-model_name = 'onnx/body_cspnext-t_rtmcc-256x256'
+model_name = 'onnx/body_hardcorenas-c_lhr-256x256'
 onnx_file = model_name + '.onnx'
-# torch.onnx.export(model, x, onnx_file, input_names=['image'], output_names=['coordinates'])
+torch.onnx.export(model, x, onnx_file, input_names=['image'], output_names=['heatmap'])
 # torch.onnx.export(model, x, onnx_file, input_names=['image'], output_names=['heatmap', 'visibility'])
-torch.onnx.export(model, x, onnx_file, input_names=['input'], output_names=['output_x', 'output_y'])
+# torch.onnx.export(model, x, onnx_file, input_names=['image'], output_names=['output_x', 'output_y'])
 
 import onnx
 from onnxsim import simplify

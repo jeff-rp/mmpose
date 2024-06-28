@@ -3,15 +3,15 @@ _base_ = ['mmpose::_base_/default_runtime.py']
 # runtime
 max_epochs = 300
 base_lr = 0.0005
-train_batch_size = 64
-val_batch_size = 32
-num_workers = 4
+train_batch_size = 80
+val_batch_size = 40
+num_workers = 6
 val_interval = 10
 cos_annealing_begin = 100
 data_root = '../'
-backbone_checkpoint = None
+backbone_checkpoint = "work_dirs/body_mobilenetv4-m_pretrain/best_coco_AP_epoch_200.pth"
 head_checkpoint = None
-log_interval=50
+log_interval=500
 
 # common setting
 num_keypoints = 29
@@ -76,7 +76,7 @@ train_pipeline = [
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
-    dict(type='RandomBBoxTransform', scale_factor=[0.6, 1.4], rotate_factor=70),
+    dict(type='RandomBBoxTransform', scale_factor=[0.7, 1.3], rotate_factor=70),
     dict(type='TopdownAffine', input_size=codec['input_size'], use_udp=True),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(type='Albumentation', transforms=[
@@ -122,24 +122,19 @@ train_datasets = [
         pipeline=[]
     ),
     dict(
-        type='AicDataset',
+        type='Coco29Dataset',
         data_root=data_root+'aic/',
         data_mode='topdown',
-        ann_file='annotations/aic_train_v1.json',
+        ann_file='annotations/aic_body29_train_v2.json',
         data_prefix=dict(img='ai_challenger_keypoint_train_20170902/keypoint_train_images_20170902/'),
-        sample_interval=4,
-        pipeline=[
-            dict(type='KeypointConverter',
-                 num_keypoints=29,
-                 mapping=[(0, 6), (1, 8), (2, 10), (3, 5), (4, 7), (5, 9), (6, 12), (7, 14), (8, 16),
-                          (9, 11), (10, 13), (11, 15)])
-        ]
+        sample_interval=2,
+        pipeline=[]
     ),
     dict(
         type='Coco29Dataset',
         data_root=data_root+'Motion-X/',
         data_mode='topdown',
-        ann_file='annotations/motion-x_body29_train_v2.json',
+        ann_file='annotations/motion-x_body29_train_v3.json',
         data_prefix=dict(img='image/'),
         sample_interval=2,
         pipeline=[]

@@ -9,6 +9,7 @@ from mmpose.models.utils.tta import flip_heatmaps
 from mmpose.evaluation.functional import pose_pck_accuracy
 from ..base_head import BaseHead
 from typing import Sequence, Tuple
+from .attention import Attention
 
 class UpSampleLayer(nn.Module):
     def __init__(self, mode="bilinear", factor=2, align_corners=False):
@@ -47,7 +48,8 @@ class ResMBConv(nn.Module):
         return x + self.point_conv(self.depth_conv(self.inverted_conv(x)))
 
 class SegHead(nn.Module):
-    def __init__(self, in_channel_list, head_width, head_depth, expand_ratio, final_expand, n_classes):
+    def __init__(self, in_channel_list, head_width, head_depth, expand_ratio, final_expand, n_classes,
+                 with_attention):
         super(SegHead, self).__init__()
 
         self.inputs = nn.ModuleList([
@@ -73,12 +75,22 @@ class SegHead(nn.Module):
         self.middle = nn.Sequential(*middle)
 
         expand_channels = round(head_width * final_expand)
-        self.output = nn.Sequential(
-            nn.Conv2d(head_width, expand_channels, 1, bias=False),
-            nn.BatchNorm2d(expand_channels),
-            nn.Hardswish(inplace=True),
-            nn.Conv2d(round(head_width * final_expand), n_classes, 1, bias=True),
-        )
+        if with_attention:
+            attention_cfg = dict(channels=expand_channels, ratio=4)
+            self.output = nn.Sequential(
+                nn.Conv2d(head_width, expand_channels, 1, bias=False),
+                nn.BatchNorm2d(expand_channels),
+                nn.Hardswish(inplace=True),
+                Attention(**attention_cfg),
+                nn.Conv2d(expand_channels, n_classes, 1, bias=True),
+            )
+        else:
+            self.output = nn.Sequential(
+                nn.Conv2d(head_width, expand_channels, 1, bias=False),
+                nn.BatchNorm2d(expand_channels),
+                nn.Hardswish(inplace=True),
+                nn.Conv2d(expand_channels, n_classes, 1, bias=True),
+            )
 
     def forward(self, feature_list):
         for i, m in enumerate(self.inputs):
@@ -94,6 +106,9 @@ class EVitSegHead(BaseHead):
     def __init__(self,
                  in_channels: Sequence[int],
                  out_channels: int,
+                 head_width: int = 64,
+                 with_attention: bool = False,
+                 final_sigmoid = False,
                  loss: ConfigType = dict(type='KeypointMSELoss', use_target_weight=True),
                  decoder: OptConfigType = None,
                  init_cfg: OptConfigType = None):
@@ -102,8 +117,9 @@ class EVitSegHead(BaseHead):
 
         super().__init__(init_cfg)
 
-        self.head = SegHead(in_channels, head_width=64, head_depth=3, expand_ratio=4,
-                            final_expand=4, n_classes=out_channels)
+        self.head = SegHead(in_channels, head_width=head_width, head_depth=3, expand_ratio=4,
+                            final_expand=4, n_classes=out_channels, with_attention=with_attention)
+        self.final_sigmoid = final_sigmoid
         self.loss_module = MODELS.build(loss)
         if decoder is not None:
             self.decoder = KEYPOINT_CODECS.build(decoder)
@@ -111,7 +127,10 @@ class EVitSegHead(BaseHead):
             self.decoder = None
 
     def forward(self, feats: Tuple[Tensor]) -> Tensor:
-        return self.head(feats)
+        x = self.head(feats)
+        if self.final_sigmoid:
+            x = torch.sigmoid(x)
+        return x
     
     def predict(self,
                 feats: Features,

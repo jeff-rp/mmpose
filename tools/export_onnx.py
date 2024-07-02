@@ -7,8 +7,8 @@ class Model(nn.Module):
         super().__init__()
 
         self.pose_estimator = init_model(
-            "projects/redpill/body_hardcorenas-c_lhr-256x256.py",
-            "work_dirs/body_hardcorenas-c_lhr-256x256/best_coco_AP_epoch_210.pth",
+            "projects/redpill/body_mobilenetv4-s_seg-256x256.py",
+            "work_dirs/body_mobilenetv4-s_seg-256x256/best_coco_AP_epoch_230.pth",
             device='cuda',
             cfg_options=dict(model=dict(test_cfg=dict(output_heatmaps=False)))
         )
@@ -21,7 +21,7 @@ class Model(nn.Module):
 model = Model().eval()
 # model.pose_estimator.backbone.switch_to_deploy()
 x = torch.rand((1, 3, 256, 256)).to('cuda')
-model_name = 'onnx/body_hardcorenas-c_lhr-256x256'
+model_name = 'onnx/body_mobilenetv4-s_seg-256x256'
 onnx_file = model_name + '.onnx'
 torch.onnx.export(model, x, onnx_file, input_names=['image'], output_names=['heatmap'])
 # torch.onnx.export(model, x, onnx_file, input_names=['image'], output_names=['heatmap', 'visibility'])
@@ -33,8 +33,8 @@ model = onnx.load(onnx_file)
 model_simp, check = simplify(model)
 onnx.save(model_simp, onnx_file)
 
-from onnxconverter_common import float16
-onnx_fp16 = model_name + '_fp16.onnx'
-model = onnx.load(onnx_file)
-model_fp16 = float16.convert_float_to_float16(model, keep_io_types=True)
-onnx.save(model_fp16, onnx_fp16)
+# from onnxconverter_common import float16
+# onnx_fp16 = model_name + '_fp16.onnx'
+# model = onnx.load(onnx_file)
+# model_fp16 = float16.convert_float_to_float16(model, keep_io_types=True)
+# onnx.save(model_fp16, onnx_fp16)

@@ -79,7 +79,7 @@ train_pipeline = [
     dict(type='GetBBoxCenterScale'),
     dict(type='RandomFlip', direction='horizontal'),
     # dict(type='RandomHalfBody'),
-    dict(type='RandomBBoxTransform', scale_factor=[0.7, 1.3], rotate_factor=70),
+    dict(type='RandomBBoxTransform', scale_factor=[0.7, 1.4], rotate_factor=70),
     dict(type='TopdownAffine', input_size=codec['input_size'], use_udp=True),
     dict(type='mmdet.YOLOXHSVRandomAug'),
     dict(type='Albumentation', transforms=[
@@ -88,7 +88,7 @@ train_pipeline = [
         dict(type='CoarseDropout', max_holes=1, max_height=0.4, max_width=0.4, min_holes=1,
              min_height=0.2, min_width=0.2, p=0.5)
     ]),
-    dict(type='GenerateTarget', encoder=codec),
+    dict(type='GenerateTarget', encoder=codec, use_dataset_keypoint_weights=True),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [

@@ -8,7 +8,7 @@ class Model(nn.Module):
 
         self.pose_estimator = init_model(
             "projects/redpill/body_mobilenetv4-s_seg-256x256.py",
-            "work_dirs/body_mobilenetv4-s_seg-256x256/best_coco_AP_epoch_230.pth",
+            "work_dirs/body_mobilenetv4-s_seg-256x256/best_coco_AP_epoch_150.pth",
             device='cuda',
             cfg_options=dict(model=dict(test_cfg=dict(output_heatmaps=False)))
         )

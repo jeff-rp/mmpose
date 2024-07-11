@@ -1,16 +1,16 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 210
+max_epochs = 150
 base_lr = 0.001
-train_batch_size = 128
-val_batch_size = 64
+train_batch_size = 80
+val_batch_size = 40
 num_workers = 6
 val_interval = 10
-cos_annealing_begin = 70
+cos_annealing_begin = 50
 data_root = '../'
-backbone_checkpoint = "work_dirs/body_mobilenetv4-s_seg-256x256_/best_coco_AP_epoch_230.pth"
-head_checkpoint = None
+backbone_checkpoint = "work_dirs/body_mobilenetv4-m_seg-256x256/best_coco_AP_epoch_210.pth"
+head_checkpoint = "work_dirs/body_mobilenetv4-m_seg-256x256/best_coco_AP_epoch_210.pth"
 log_interval=50
 
 # common setting
@@ -22,7 +22,7 @@ randomness = dict(seed=21)
 
 # optimizer
 optim_wrapper = dict(type='OptimWrapper',
-                     optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.01),
+                     optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.05),
                      paramwise_cfg=dict(norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
 # learning policy
@@ -51,7 +51,7 @@ model = dict(
     backbone=dict(
         #_delete_=True, # Delete the backbone field in _base_
         type='mmpretrain.TIMMBackbone', # Using timm from mmpretrain
-        model_name='mobilenetv4_conv_small.e1200_r224_in1k',
+        model_name='mobilenetv4_conv_medium.e500_r256_in1k',
         features_only=True,
         pretrained=True if backbone_checkpoint is None else False,
         out_indices=(2, 3, 4),
@@ -60,11 +60,11 @@ model = dict(
     ),
     head=dict(
         type='EVitSegHead',
-        in_channels=(64, 96, 960),
+        in_channels=(80, 160, 960),
         out_channels=num_keypoints,
-        head_width=80,
+        head_width=64,
         with_attention=True,
-        final_sigmoid=True,
+        final_sigmoid=True,        
         loss=dict(type='KeypointRCELoss', use_target_weight=True, use_heatmap_weight=True),
         decoder=codec,
         init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
@@ -88,7 +88,7 @@ train_pipeline = [
         dict(type='CoarseDropout', max_holes=1, max_height=0.4, max_width=0.4, min_holes=1,
              min_height=0.2, min_width=0.2, p=0.5)
     ]),
-    dict(type='GenerateTarget', encoder=codec, use_dataset_keypoint_weights=True),
+    dict(type='GenerateTarget', encoder=codec),
     dict(type='PackPoseInputs')
 ]
 val_pipeline = [
@@ -181,11 +181,11 @@ test_dataloader = val_dataloader
 # hooks
 default_hooks = dict(
     checkpoint=dict(save_best='coco/AP', rule='greater', max_keep_ckpts=1),
-    logger=dict(interval=log_interval, interval_exp_name=50000)
+    logger=dict(interval=log_interval, interval_exp_name=5000)
 )
-# custom_hooks = [
-#     dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)
-# ]
+custom_hooks = [
+    dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)
+]
 
 # evaluators
 val_evaluator = dict(type='CocoMetric',

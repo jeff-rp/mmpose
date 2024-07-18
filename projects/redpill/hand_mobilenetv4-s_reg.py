@@ -1,14 +1,16 @@
 _base_ = ['mmpose::_base_/default_runtime.py']
 
 # runtime
-max_epochs = 150
-base_lr = 0.003
-train_batch_size = 640
-val_batch_size = 320
+max_epochs = 210
+base_lr = 0.006
+train_batch_size = 1280
+val_batch_size = 640
 num_workers = 4
 val_interval = 10
-cos_annealing_begin = 50
+cos_annealing_begin = 70
 data_root = '../'
+backbone_checkpoint = 'work_dirs/hand_mobilenetv4-s_pretrain/best_AUC_epoch_150.pth'
+head_checkpoint = None
 log_interval=500
 
 # common setting
@@ -20,6 +22,7 @@ randomness = dict(seed=21)
 # optimizer
 optim_wrapper = dict(type='OptimWrapper',
                      optimizer=dict(type='AdamW', lr=base_lr, weight_decay=0.01),
+                     clip_grad=dict(max_norm=35, norm_type=2),
                      paramwise_cfg=dict(norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 
 # learning policy
@@ -34,7 +37,7 @@ param_scheduler = [
 auto_scale_lr = dict(base_batch_size=1024)
 
 # codec settings
-codec = dict(type='UDPHeatmap', input_size=input_size, heatmap_size=(32, 32), sigma=1)
+codec = dict(type='RegressionLabel', input_size=(128, 128))
 
 # model settings
 model = dict(
@@ -50,29 +53,21 @@ model = dict(
         type='mmpretrain.TIMMBackbone', # Using timm from mmpretrain
         model_name='mobilenetv4_conv_small.e1200_r224_in1k',
         features_only=True,
-        pretrained=True,
-        out_indices=(4,)
+        pretrained=False,
+        out_indices=(4,),
+        init_cfg=dict(type='Pretrained', prefix='backbone.', checkpoint=backbone_checkpoint)
     ),
-    #head=dict(
-    #    type='DepthToSpaceHead',
-    #    in_channels=960,
-    #    out_channels=21,
-    #    loss=dict(type='KeypointRCELoss', use_target_weight=True, use_heatmap_weight=True),
-    #    decoder=codec
-    #),
-    #test_cfg=dict(flip_test=True)
+    neck=dict(type='GlobalAveragePooling'),
     head=dict(
-        type='HeatmapHead',
+        type='RLEHead',
         in_channels=960,
-        out_channels=21,
-        loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
-        decoder=codec
+        num_joints=21,
+        loss=dict(type='RLELoss', use_target_weight=True),
+        decoder=codec,
+        init_cfg=dict(type='Pretrained', prefix='head.', checkpoint=head_checkpoint)
+                 if head_checkpoint is not None else None
     ),
-    test_cfg=dict(
-        flip_test=True,
-        flip_mode='heatmap',
-        shift_heatmap=False
-    )
+    test_cfg=dict(flip_test=True, shift_coords=True)
 )
 
 # pipelines
@@ -248,6 +243,7 @@ default_hooks = dict(
     checkpoint=dict(save_best='AUC', rule='greater', max_keep_ckpts=1),
     logger=dict(interval=log_interval, interval_exp_name=5000)
 )
+log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True, num_digits=3)
 # custom_hooks = [
 #     dict(type='EMAHook', ema_type='ExpMomentumEMA', momentum=0.0002, update_buffers=True, priority=49)
 # ]

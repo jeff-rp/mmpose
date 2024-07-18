@@ -9,7 +9,7 @@ class Model(nn.Module):
 
         self.pose_estimator = init_model(
             "projects/redpill/body_mobilenetv4-m_sega-256x256.py",
-            None,
+            "work_dirs/body_mobilenetv4-m_sega-256x256/best_coco_AP_epoch_210.pth",
             device='cuda',
             cfg_options=dict(model=dict(test_cfg=dict(output_heatmaps=False)))
         )
@@ -27,5 +27,5 @@ model_name = 'onnx/body_mobilenetv4-m_sega-256x256'
 
 tflite_file = model_name + '.tflite'
 # torch.backends.quantized.engine = 'qnnpack'
-converter = TFLiteConverter(model, x, tflite_file, float16_quantization=False)
+converter = TFLiteConverter(model, x, tflite_file, float16_quantization=True)
 converter.convert()

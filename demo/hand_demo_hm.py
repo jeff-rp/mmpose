@@ -24,7 +24,7 @@ def draw_hand(img, kpts):
         pt2 = (int(kpts[par][0]), int(kpts[par][1]))
         cv.line(img, pt1, pt2, color, 2)
 
-session = onnxruntime.InferenceSession(r'./onnx/hand_mobileone-s1-pretrain.onnx')
+session = onnxruntime.InferenceSession(r'./onnx/hand_hgnetv2-b0_pretrain.onnx')
 
 cap = cv.VideoCapture(0)
 while (cap.isOpened()):
@@ -34,7 +34,7 @@ while (cap.isOpened()):
         roi = ((frame_w-256) // 2, (frame_h-256) // 2, 256, 256)
         cropped_frame = frame[roi[1]:roi[1]+roi[3],roi[0]:roi[0]+roi[2]].copy()
 
-        img_resized = cv.resize(cropped_frame, (192, 192))
+        img_resized = cv.resize(cropped_frame, (128, 128))
         img_rgb = cv.cvtColor(img_resized, cv.COLOR_BGR2RGB).astype(np.float32)
         img_normalized = ((img_rgb - [127.5, 127.5, 127.5]) / [255.0, 255.0, 255.0])
         img_normalized = np.expand_dims(img_normalized.astype(np.float32), 0)

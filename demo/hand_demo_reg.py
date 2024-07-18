@@ -22,7 +22,7 @@ def draw_hand(img, kpts):
         pt2 = (int(kpts[parents[i]][0]), int(kpts[parents[i]][1]))
         cv.line(img, pt1, pt2, colors[i], 2)
 
-session = onnxruntime.InferenceSession(r'./onnx/hand_mobileone-s1_rle-128x128.onnx')
+session = onnxruntime.InferenceSession(r'./onnx/hand_hgnetv2-b0_rle.onnx')
 
 cap = cv.VideoCapture(0)
 while (cap.isOpened()):

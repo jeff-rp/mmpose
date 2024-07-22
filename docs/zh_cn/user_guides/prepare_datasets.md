@@ -96,17 +96,21 @@ MMPose 支持多种任务和相应的数据集。你可以在 [数据集仓库](
 
 - 确定数据集类名。如果你将数据集重组为 COCO 格式，你可以简单地使用 `CocoDataset` 作为 `dataset_type` 的值。否则，你将需要使用你添加的自定义数据集类的名称。
 
-- 指定元信息配置文件。MMPose 1.x 采用了与 MMPose 0.x 不同的策略来指定元信息。在 MMPose 1.x 中，用户可以按照以下方式指定元信息配置文件：
+- 指定元信息配置文件。假设你的数据集标注文件存储路径为 `aaa/annotations/xxx.json`，图片存储路径为 `aaa/train/c.jpg`，你应该按照以下方式指定元信息配置文件：
 
   ```python
   train_dataloader = dict(
       ...
       dataset=dict(
           type=dataset_type,
-          data_root='root/of/your/train/data',
-          ann_file='path/to/your/train/json',
-          data_prefix=dict(img='path/to/your/train/img'),
-          # specify dataset meta information
+          data_root='aaa',
+          # 标注文件路径为 {data_root}/{ann_file}
+          # 例如： aaa/annotations/xxx.json
+          ann_file='annotations/xxx.json',
+          # 图片路径为 {data_root}/{img}/
+          # 例如： aaa/train/c.jpg
+          data_prefix=dict(img='train'),
+          # 指定元信息配置文件
           metainfo=dict(from_file='configs/_base_/datasets/custom.py'),
           ...),
   )
@@ -123,7 +127,7 @@ MMPose 提供了一个方便且多功能的解决方案，用于训练混合数�
 `tools/analysis_tools/browse_dataset.py` 帮助用户可视化地浏览姿态数据集，或将图像保存到指定的目录。
 
 ```shell
-python tools/misc/browse_dataset.py ${CONFIG} [-h] [--output-dir ${OUTPUT_DIR}] [--not-show] [--phase ${PHASE}] [--mode ${MODE}] [--show-interval ${SHOW_INTERVAL}]
+python tools/misc/browse_dataset.py ${CONFIG} [-h] [--output-dir ${OUTPUT_DIR}] [--max-item-per-dataset ${MAX_ITEM_PER_DATASET}] [--not-show] [--phase ${PHASE}] [--mode ${MODE}] [--show-interval ${SHOW_INTERVAL}]
 ```
 
 | ARGS                             | Description                                                                                                |
@@ -134,6 +138,7 @@ python tools/misc/browse_dataset.py ${CONFIG} [-h] [--output-dir ${OUTPUT_DIR}] 
 | `--phase {train, val, test}`     | 数据集选项                                                                                                 |
 | `--mode {original, transformed}` | 指定可视化图片类型。 `original` 为不使用数据增强的原始图片及标注可视化; `transformed` 为经过增强后的可视化 |
 | `--show-interval SHOW_INTERVAL`  | 显示图片的时间间隔                                                                                         |
+| `--max-item-per-dataset`         | 定义每个数据集可视化的最大样本数。默认为 50                                                                |
 
 例如，用户想要可视化 COCO 数据集中的图像和标注，可以使用：
 

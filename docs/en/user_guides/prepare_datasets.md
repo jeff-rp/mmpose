@@ -96,16 +96,20 @@ The [Customize Datasets](../advanced_guides/customize_datasets.md) guide provide
 
 - Determine the dataset class name. If you reorganize your dataset into the COCO format, you can simply use `CocoDataset` as the value for `dataset_type`. Otherwise, you will need to use the name of the custom dataset class you added.
 
-- Specify the meta information config file. MMPose 1.x employs a different strategy for specifying meta information compared to MMPose 0.x. In MMPose 1.x, users can specify the meta information config file as follows:
+- Specify the meta information config file. Suppose the path of the annotation file is `aaa/annotations/xxx.json`, and the path of imgs is `aaa/train/c.jpg`, you should specify the meta information config file as follows:
 
   ```python
   train_dataloader = dict(
       ...
       dataset=dict(
           type=dataset_type,
-          data_root='root/of/your/train/data',
-          ann_file='path/to/your/train/json',
-          data_prefix=dict(img='path/to/your/train/img'),
+          data_root='aaa',
+          # ann file is stored at {data_root}/{ann_file}
+          # e.g. aaa/annotations/xxx.json
+          ann_file='annotations/xxx.json',
+          # img is stored at {data_root}/{img}/
+          # e.g. aaa/train/c.jpg
+          data_prefix=dict(img='train'),
           # specify dataset meta information
           metainfo=dict(from_file='configs/_base_/datasets/custom.py'),
           ...),
@@ -123,7 +127,7 @@ MMPose offers a convenient and versatile solution for training with mixed datase
 `tools/analysis_tools/browse_dataset.py` helps the user to browse a pose dataset visually, or save the image to a designated directory.
 
 ```shell
-python tools/misc/browse_dataset.py ${CONFIG} [-h] [--output-dir ${OUTPUT_DIR}] [--not-show] [--phase ${PHASE}] [--mode ${MODE}] [--show-interval ${SHOW_INTERVAL}]
+python tools/misc/browse_dataset.py ${CONFIG} [-h] [--output-dir ${OUTPUT_DIR}] [--max-item-per-dataset ${MAX_ITEM_PER_DATASET}] [--not-show] [--phase ${PHASE}] [--mode ${MODE}] [--show-interval ${SHOW_INTERVAL}]
 ```
 
 | ARGS                             | Description                                                                                                                                          |
@@ -134,6 +138,7 @@ python tools/misc/browse_dataset.py ${CONFIG} [-h] [--output-dir ${OUTPUT_DIR}] 
 | `--phase {train, val, test}`     | Options for dataset.                                                                                                                                 |
 | `--mode {original, transformed}` | Specify the type of visualized images. `original` means to show images without pre-processing; `transformed` means to show images are pre-processed. |
 | `--show-interval SHOW_INTERVAL`  | Time interval between visualizing two images.                                                                                                        |
+| `--max-item-per-dataset`         | Define the maximum item processed per dataset, default to 50                                                                                         |
 
 For instance, users who want to visualize images and annotations in COCO dataset use:
 

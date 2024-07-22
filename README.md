@@ -98,6 +98,8 @@ https://user-images.githubusercontent.com/15977946/124654387-0fd3c500-ded1-11eb-
 
 ## What's New
 
+- Release [RTMW3D](/projects/rtmpose3d), a real-time model for 3D wholebody pose estimation.
+
 - Release [RTMO](/projects/rtmo), a state-of-the-art real-time method for multi-person pose estimation.
 
   ![rtmo](https://github.com/open-mmlab/mmpose/assets/26127467/54d5555a-23e5-4308-89d1-f0c82a6734c2)
@@ -106,10 +108,9 @@ https://user-images.githubusercontent.com/15977946/124654387-0fd3c500-ded1-11eb-
 
 - Support inference of [PoseAnything](/projects/pose_anything). Web demo is available [here](https://openxlab.org.cn/apps/detail/orhir/Pose-Anything).
 
-- Support for two new datasets:
+- Support for new datasets:
 
-  - (CVPR 2023) [ExLPose](https://mmpose.readthedocs.io/en/latest/dataset_zoo/2d_body_keypoint.html#exlpose-dataset)
-  - (ICCV 2023) [H3WB](/docs/en/dataset_zoo/3d_wholebody_keypoint.md)
+  - (ICCV 2015) [300VW](/docs/en/dataset_zoo/2d_face_keypoint.md)
 
 - Welcome to use the [*MMPose project*](/projects/README.md). Here, you can discover the latest features and algorithms in MMPose and quickly share your ideas and code implementations with the community. Adding new features to MMPose has become smoother:
 
@@ -119,6 +120,7 @@ https://user-images.githubusercontent.com/15977946/124654387-0fd3c500-ded1-11eb-
   - Newly added projects include:
     - [RTMPose](/projects/rtmpose/)
     - [RTMO](/projects/rtmo/)
+    - [RTMPose3D](/projects/rtmpose3d/)
     - [PoseAnything](/projects/pose_anything/)
     - [YOLOX-Pose](/projects/yolox_pose/)
     - [MMPose4AIGC](/projects/mmpose4aigc/)
@@ -243,6 +245,7 @@ A summary can be found in the [Model Zoo](https://mmpose.readthedocs.io/en/lates
 - [x] [Human3.6M](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#human3-6m-tpami-2014) \[[homepage](http://vision.imar.ro/human3.6m/description.php)\] (TPAMI'2014)
 - [x] [COCO](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#coco-eccv-2014) \[[homepage](http://cocodataset.org/)\] (ECCV'2014)
 - [x] [CMU Panoptic](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#cmu-panoptic-iccv-2015) \[[homepage](http://domedb.perception.cs.cmu.edu/)\] (ICCV'2015)
+- [x] [300VW](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#300w-imavis-2016) \[[homepage](https://ibug.doc.ic.ac.uk/resources/300-VW/)\] (ICCV'2015)
 - [x] [DeepFashion](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#deepfashion-cvpr-2016) \[[homepage](http://mmlab.ie.cuhk.edu.hk/projects/DeepFashion/LandmarkDetection.html)\] (CVPR'2016)
 - [x] [300W](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#300w-imavis-2016) \[[homepage](https://ibug.doc.ic.ac.uk/resources/300-W/)\] (IMAVIS'2016)
 - [x] [RHD](https://mmpose.readthedocs.io/en/latest/model_zoo_papers/datasets.html#rhd-iccv-2017) \[[homepage](https://lmb.informatik.uni-freiburg.de/resources/datasets/RenderedHandposeDataset.en.html)\] (ICCV'2017)

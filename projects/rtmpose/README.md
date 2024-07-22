@@ -91,6 +91,7 @@ ______________________________________________________________________
   |   s   |   72.2   |  200+   |  710+   |
   |   m   |   75.8   |   90+   |  430+   |
   |   l   |   76.5   |   50+   |  280+   |
+  | l-384 |   78.3   |    -    |  160+   |
 
 - 🛠️ **Easy to deploy**
 
@@ -332,7 +333,7 @@ For more details, please refer to [GroupFisher Pruning for RTMPose](./rtmpose/pr
 
 | Config                          | Input Size | Whole AP | Whole AR | FLOPS<sup><br>(G) | ORT-Latency<sup><br>(ms)<sup><br>(i7-11700) | TRT-FP16-Latency<sup><br>(ms)<sup><br>(GTX 1660Ti) |             Download              |
 | :------------------------------ | :--------: | :------: | :------: | :---------------: | :-----------------------------------------: | :------------------------------------------------: | :-------------------------------: |
-| [RTMPose-t](./rtmpose/wholebody_2d_keypoint/rtmpose-t_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   48.5   |   58.4   |        0.5        |                      -                      |                         -                          | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.pth) |
+| [RTMPose-t](./rtmpose/wholebody_2d_keypoint/rtmpose-t_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   48.5   |   58.4   |        0.5        |                      -                      |                         -                          | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.zip) |
 | [RTMPose-s](./rtmpose/wholebody_2d_keypoint/rtmpose-s_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   53.8   |   63.2   |        0.9        |                      -                      |                         -                          | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-s_simcc-ucoco_dw-ucoco_270e-256x192-3fd922c8_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-s_simcc-ucoco_dw-ucoco_270e-256x192-3fd922c8_20230728.zip) |
 | [RTMPose-m](./rtmpose/wholebody_2d_keypoint/rtmpose-m_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   60.6   |   69.5   |       2.22        |                    13.50                    |                        4.00                        | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.zip) |
 | [RTMPose-l](./rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   63.1   |   71.7   |       4.52        |                    23.41                    |                        5.67                        | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.zip) |
@@ -460,12 +461,23 @@ We also provide the ImageNet classification pre-trained weights of the CSPNeXt b
 
 ## 😎 Get Started [🔝](#-table-of-contents)
 
-We provide two appoaches to try RTMPose:
+We provide following appoaches to try RTMPose:
 
 - [Online RTMPose Demo](https://openxlab.org.cn/apps/detail/mmpose/RTMPose)
 - [Examples](https://github.com/open-mmlab/mmpose/tree/dev-1.x/projects/rtmpose/examples/onnxruntime) based on Python and ONNXRuntime (without mmcv)
+- [rtmlib](https://github.com/Tau-J/rtmlib/tree/main) （without mmcv, pytorch）
 - MMPose demo scripts (based on Pytorch)
 - Pre-compiled MMDeploy SDK (Recommended, 6-10 times faster)
+
+## rtmlib
+
+[rtmlib](https://github.com/Tau-J/rtmlib/tree/main) provides simple and easy-to-use API for inference with RTMPose models.
+
+- Support OpenCV/ONNXRuntime/OpenVINO inference and does not require Pytorch or MMCV.
+- Super user-friendly API for inference and visualization.
+- Support both CPU and GPU inference.
+- Automatically download onnx models from OpenMMLab model zoo.
+- Support all series of RTMPose models (RTMPose, DWPose, RTMO, RTMW etc.)
 
 ### MMPose demo scripts
 
@@ -1265,5 +1277,16 @@ If you find RTMPose useful in your research, please consider cite:
     author={MMPose Contributors},
     howpublished = {\url{https://github.com/open-mmlab/mmpose}},
     year={2020}
+}
+```
+
+if you used the whole-body model RTMW, please also cite:
+
+```bibtex
+@article{jiang2024rtmw,
+  title={RTMW: Real-Time Multi-Person 2D and 3D Whole-body Pose Estimation},
+  author={Jiang, Tao and Xie, Xinchen and Li, Yining},
+  journal={arXiv preprint arXiv:2407.08634},
+  year={2024}
 }
 ```

@@ -87,6 +87,7 @@ ______________________________________________________________________
   |   s   |   72.2   |  200+   |  710+   |
   |   m   |   75.8   |   90+   |  430+   |
   |   l   |   76.5   |   50+   |  280+   |
+  | l-384 |   78.3   |    -    |  160+   |
 
 - 🛠️ **易部署**
 
@@ -323,7 +324,7 @@ RTMPose 是一个长期优化迭代的项目，致力于业务场景下的高性
 
 | Config                          | Input Size | Whole AP | Whole AR | FLOPS<sup><br>(G) | ORT-Latency<sup><br>(ms)<sup><br>(i7-11700) | TRT-FP16-Latency<sup><br>(ms)<sup><br>(GTX 1660Ti) |             Download              |
 | :------------------------------ | :--------: | :------: | :------: | :---------------: | :-----------------------------------------: | :------------------------------------------------: | :-------------------------------: |
-| [RTMPose-t](./rtmpose/wholebody_2d_keypoint/rtmpose-t_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   48.5   |   58.4   |        0.5        |                      -                      |                         -                          | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.pth) |
+| [RTMPose-t](./rtmpose/wholebody_2d_keypoint/rtmpose-t_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   48.5   |   58.4   |        0.5        |                      -                      |                         -                          | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-t_simcc-ucoco_dw-ucoco_270e-256x192-dcf277bf_20230728.zip) |
 | [RTMPose-s](./rtmpose/wholebody_2d_keypoint/rtmpose-s_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   53.8   |   63.2   |        0.9        |                      -                      |                         -                          | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-s_simcc-ucoco_dw-ucoco_270e-256x192-3fd922c8_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-s_simcc-ucoco_dw-ucoco_270e-256x192-3fd922c8_20230728.zip) |
 | [RTMPose-m](./rtmpose/wholebody_2d_keypoint/rtmpose-m_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   60.6   |   69.5   |       2.22        |                    13.50                    |                        4.00                        | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.zip) |
 | [RTMPose-l](./rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb64-270e_coco-wholebody-256x192.py) |  256x192   |   63.1   |   71.7   |       4.52        |                    23.41                    |                        5.67                        | [pth](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.pth)<br>[onnx](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-l_simcc-ucoco_dw-ucoco_270e-256x192-4d6dfc62_20230728.zip) |
@@ -451,12 +452,23 @@ RTMPose 是一个长期优化迭代的项目，致力于业务场景下的高性
 
 ## 😎 快速尝试 [🔝](#-table-of-contents)
 
-我们提供了两种途径来让用户尝试 RTMPose 模型：
+我们提供了多种途径来让用户尝试 RTMPose 模型：
 
 - [在线 RTMPose Demo](https://openxlab.org.cn/apps/detail/mmpose/RTMPose)
 - [Examples](https://github.com/open-mmlab/mmpose/tree/dev-1.x/projects/rtmpose/examples/onnxruntime) 基于 Python 和 ONNXRuntime （无 MMCV 依赖）
+- [rtmlib 推理库](https://github.com/Tau-J/rtmlib/tree/main) （无 MMCV、Pytorch 依赖）
 - MMPose demo 脚本 （基于 Pytorch）
 - MMDeploy SDK 预编译包 （推荐，速度提升6-10倍）
+
+### rtmlib 推理库
+
+[rtmlib](https://github.com/Tau-J/rtmlib/tree/main) 提供了开箱即用的 RTMPose 全系列官方及衍生模型的推理：
+
+- 无需安装 mmcv，mmengine，mmpose 等一系列训练库，无需 pytorch 环境，有 opencv 就能推理
+- 超级友好简洁的推理和可视化接口
+- 支持 CPU 和 GPU 推理
+- 自动下载和缓存 onnx 模型
+- 支持 RTMPose 全系列官方及衍生模型：RTMPose，DWPose，RTMO，RTMW etc.
 
 ### MMPose demo 脚本
 

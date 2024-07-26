@@ -463,3 +463,226 @@ class DepthToSpaceHead(BaseHead):
             losses.update(acc_pose=acc_pose)
 
         return losses
+    
+class FuseConv(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)
+        self.norm = nn.BatchNorm2d(dim)
+        self.pwconv1 = nn.Linear(dim, 4 * dim)
+        self.act = nn.Hardswish()
+        self.pwconv2 = nn.Linear(4 * dim, dim)
+
+    def forward(self, x):
+        input = x
+        x = self.dwconv(x)
+        x = self.norm(x)
+        x = x.permute(0, 2, 3, 1) # (N, C, H, W) -> (N, H, W, C)
+        x = self.pwconv1(x)
+        x = self.act(x)
+        x = self.pwconv2(x)
+        x = x.permute(0, 3, 1, 2) # (N, H, W, C) -> (N, C, H, W)
+
+        x = input + x
+        return x
+    
+class ConvergeHead(nn.Module):
+    def __init__(self, in_dim, up_ratio, kernel_size, padding, num_joints):
+        super().__init__()
+        self.in_dim = in_dim     
+        self.up_ratio = up_ratio
+        self.num_joints = num_joints
+
+        self.conv = nn.Conv2d(in_dim*num_joints, (up_ratio**2)*num_joints, 
+                              kernel_size, 1, padding, 1, num_joints)
+        self.apply(self._init_weights)
+
+    def forward(self, x):
+        hp = self.conv(x)
+        hp = nn.functional.pixel_shuffle(hp, self.up_ratio)
+        return hp
+
+    def _init_weights(self, m):
+        if isinstance(m, (nn.Conv2d, nn.Linear)):
+            nn.init.normal_(m.weight, std=0.001)
+            nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+
+@MODELS.register_module()
+class SRPoseHead(BaseHead):
+    def __init__(self,
+                 in_channels=[64, 96, 960],
+                 out_channels=[48, 96, 192],
+                 num_joints=17,
+                 loss: ConfigType = dict(type='KeypointMSELoss', use_target_weight=True),
+                 decoder: OptConfigType = None,
+                 init_cfg: OptConfigType = None):
+        if init_cfg is None:
+            init_cfg = self.default_init_cfg
+
+        super().__init__()
+
+        c3, c4, c5 = out_channels
+        e3, e4, e5 = 4, 8, 16
+
+        # self.lr_head = nn.Sequential(
+        #     nn.Conv2d(in_channels[-1], num_joints, 1),
+        #     nn.ReLU()
+        # )
+        # self.lr_fuse = nn.Sequential(
+        #     nn.Conv2d(num_joints, c5, 1),
+        #     nn.ReLU()
+        # )
+        self.pre_fuse5 = nn.Sequential(
+            nn.Conv2d(in_channels[-1], c5, 1),
+            nn.BatchNorm2d(c5),
+            nn.ReLU()
+        )
+
+        self.k5 = nn.Sequential(
+            nn.Conv2d(c5, e5 * num_joints, 1),
+            # nn.BatchNorm2d(per_emb_num * num_joints),
+            nn.ReLU(),
+            ConvergeHead(e5, 8, 3, 1, num_joints)
+        )
+
+        self.pre_up5 = nn.Sequential(
+            nn.Conv2d(c5, c5, 3, 1, 1, groups=c5),
+            nn.Conv2d(c5, c4, 1),
+            nn.BatchNorm2d(c4),
+            nn.ReLU()
+        )
+        self.pre_fuse4 = nn.Sequential(
+            nn.Conv2d(in_channels[-2], c4, 1),
+            nn.BatchNorm2d(c4),
+            nn.ReLU()
+        )
+        self.fuse4 = nn.Sequential(
+            nn.Conv2d(2 * c4, c4, 1),
+            FuseConv(c4),
+            FuseConv(c4)
+        )
+        self.k4 = nn.Sequential(
+            nn.Conv2d(c4, e4 * num_joints, 1),
+            # nn.BatchNorm2d(per_emb_num * num_joints),
+            nn.ReLU(),
+            ConvergeHead(e4, 4, 5, 2, num_joints)
+        )
+
+        self.pre_up4 = nn.Sequential(
+            nn.Conv2d(c4, c4, 3, 1, 1, groups=c4),
+            nn.Conv2d(c4, c3, 1),
+            nn.BatchNorm2d(c3),
+            nn.ReLU()
+        )
+        self.pre_fuse3 = nn.Sequential(
+            nn.Conv2d(in_channels[-3], c3, 1),
+            nn.BatchNorm2d(c3),
+            nn.ReLU()
+        )
+        self.fuse3 = nn.Sequential(
+            nn.Conv2d(2 * c3, c3, 1),
+            FuseConv(c3),
+            FuseConv(c3)
+        )
+        self.k3 = nn.Sequential(
+            nn.Conv2d(c3, e3 * num_joints, 1),
+            # nn.BatchNorm2d(per_emb_num * num_joints),
+            nn.ReLU(),
+            ConvergeHead(e3, 2, 7, 3, num_joints)
+        )
+
+        self.loss_module = MODELS.build(loss)
+        if decoder is not None:
+            self.decoder = KEYPOINT_CODECS.build(decoder)
+        else:
+            self.decoder = None
+
+    @property
+    def default_init_cfg(self):
+        init_cfg = [
+            dict(type='Normal', layer=['Conv2d'], std=0.001),
+            dict(type='Constant', layer='BatchNorm2d', val=1)
+        ]
+        return init_cfg
+
+    def forward(self, feats: Tuple[Tensor]) -> Tensor:
+        f3, f4, f5 = feats
+        # lrhm = self.lr_head(f5)
+        # m5 = self.pre_fuse5(f5) + self.lr_fuse(lrhm)
+        m5 = self.pre_fuse5(f5)  
+
+        interpolate = nn.functional.interpolate
+        m4 = torch.cat([interpolate(self.pre_up5(m5), scale_factor=2), self.pre_fuse4(f4)], 1)
+        m4 = self.fuse4(m4)
+        m3 = torch.cat([interpolate(self.pre_up4(m4), scale_factor=2), self.pre_fuse3(f3)], 1)
+        m3 = self.fuse3(m3)
+
+        if self.training:
+            hm5 = self.k5(m5)
+            hm4 = self.k4(m4)
+            hm3 = self.k3(m3)
+            return [hm3, hm4, hm5]
+        else:
+            return self.k3(m3)
+    
+    def predict(self,
+                feats: Features,
+                batch_data_samples: OptSampleList,
+                test_cfg: ConfigType = {}) -> Predictions:
+        if test_cfg.get('flip_test', False):
+            # TTA: flip test -> feats = [orig, flipped]
+            assert isinstance(feats, list) and len(feats) == 2
+            flip_indices = batch_data_samples[0].metainfo['flip_indices']
+            _feats, _feats_flip = feats
+            _batch_heatmaps = self.forward(_feats)
+            _batch_heatmaps_flip = flip_heatmaps(
+                self.forward(_feats_flip),
+                flip_mode=test_cfg.get('flip_mode', 'heatmap'),
+                flip_indices=flip_indices,
+                shift_heatmap=test_cfg.get('shift_heatmap', False))
+            batch_heatmaps = (_batch_heatmaps + _batch_heatmaps_flip) * 0.5
+        else:
+            batch_heatmaps = self.forward(feats)[0]
+
+        preds = self.decode(batch_heatmaps)
+
+        if test_cfg.get('output_heatmaps', False):
+            pred_fields = [
+                PixelData(heatmaps=hm) for hm in batch_heatmaps.detach()
+            ]
+            return preds, pred_fields
+        else:
+            return preds
+        
+    def loss(self,
+             feats: Tuple[Tensor],
+             batch_data_samples: OptSampleList,
+             train_cfg: ConfigType = {}) -> dict:
+        pred_fields = self.forward(feats)
+        gt_heatmaps = torch.stack([d.gt_fields.heatmaps for d in batch_data_samples])
+        keypoint_weights = torch.cat([
+            d.gt_instance_labels.keypoint_weights for d in batch_data_samples
+        ])
+
+        # calculate losses
+        losses = dict()
+        loss3 = self.loss_module(pred_fields[0], gt_heatmaps, keypoint_weights)
+        loss4 = self.loss_module(pred_fields[1], gt_heatmaps, keypoint_weights)
+        loss5 = self.loss_module(pred_fields[2], gt_heatmaps, keypoint_weights)
+
+        losses.update(loss_kpt=loss3+loss4+loss5)
+
+        # calculate accuracy
+        if train_cfg.get('compute_acc', True):
+            _, avg_acc, _ = pose_pck_accuracy(
+                output=to_numpy(pred_fields[0]),
+                target=to_numpy(gt_heatmaps),
+                mask=to_numpy(keypoint_weights) > 0)
+
+            acc_pose = torch.tensor(avg_acc, device=gt_heatmaps.device)
+            losses.update(acc_pose=acc_pose)
+
+        return losses

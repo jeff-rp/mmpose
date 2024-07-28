@@ -541,59 +541,59 @@ class SRPoseHead(BaseHead):
         #     nn.ReLU()
         # )
         self.pre_fuse5 = nn.Sequential(
-            nn.Conv2d(in_channels[-1], c5, 1),
+            nn.Conv2d(in_channels[-1], c5, 1, bias=False),
             nn.BatchNorm2d(c5),
             nn.ReLU()
         )
 
         self.k5 = nn.Sequential(
-            nn.Conv2d(c5, e5 * num_joints, 1),
+            nn.Conv2d(c5, e5 * num_joints, 1, bias=False),
             # nn.BatchNorm2d(per_emb_num * num_joints),
             nn.ReLU(),
             ConvergeHead(e5, 8, 3, 1, num_joints)
         )
 
         self.pre_up5 = nn.Sequential(
-            nn.Conv2d(c5, c5, 3, 1, 1, groups=c5),
-            nn.Conv2d(c5, c4, 1),
+            nn.Conv2d(c5, c5, 3, 1, 1, groups=c5, bias=False),
+            nn.Conv2d(c5, c4, 1, bias=False),
             nn.BatchNorm2d(c4),
             nn.ReLU()
         )
         self.pre_fuse4 = nn.Sequential(
-            nn.Conv2d(in_channels[-2], c4, 1),
+            nn.Conv2d(in_channels[-2], c4, 1, bias=False),
             nn.BatchNorm2d(c4),
             nn.ReLU()
         )
         self.fuse4 = nn.Sequential(
-            nn.Conv2d(2 * c4, c4, 1),
+            nn.Conv2d(2 * c4, c4, 1, bias=False),
             FuseConv(c4),
             FuseConv(c4)
         )
         self.k4 = nn.Sequential(
-            nn.Conv2d(c4, e4 * num_joints, 1),
+            nn.Conv2d(c4, e4 * num_joints, 1, bias=False),
             # nn.BatchNorm2d(per_emb_num * num_joints),
             nn.ReLU(),
             ConvergeHead(e4, 4, 5, 2, num_joints)
         )
 
         self.pre_up4 = nn.Sequential(
-            nn.Conv2d(c4, c4, 3, 1, 1, groups=c4),
-            nn.Conv2d(c4, c3, 1),
+            nn.Conv2d(c4, c4, 3, 1, 1, groups=c4, bias=False),
+            nn.Conv2d(c4, c3, 1, bias=False),
             nn.BatchNorm2d(c3),
             nn.ReLU()
         )
         self.pre_fuse3 = nn.Sequential(
-            nn.Conv2d(in_channels[-3], c3, 1),
+            nn.Conv2d(in_channels[-3], c3, 1, bias=False),
             nn.BatchNorm2d(c3),
             nn.ReLU()
         )
         self.fuse3 = nn.Sequential(
-            nn.Conv2d(2 * c3, c3, 1),
+            nn.Conv2d(2 * c3, c3, 1, bias=False),
             FuseConv(c3),
             FuseConv(c3)
         )
         self.k3 = nn.Sequential(
-            nn.Conv2d(c3, e3 * num_joints, 1),
+            nn.Conv2d(c3, e3 * num_joints, 1, bias=False),
             # nn.BatchNorm2d(per_emb_num * num_joints),
             nn.ReLU(),
             ConvergeHead(e3, 2, 7, 3, num_joints)

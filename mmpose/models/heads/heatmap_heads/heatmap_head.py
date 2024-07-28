@@ -467,9 +467,9 @@ class DepthToSpaceHead(BaseHead):
 class FuseConv(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)
+        self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim, bias=False)
         self.norm = nn.BatchNorm2d(dim)
-        self.pwconv1 = nn.Linear(dim, 4 * dim)
+        self.pwconv1 = nn.Linear(dim, 4 * dim, bias=False)
         self.act = nn.Hardswish()
         self.pwconv2 = nn.Linear(4 * dim, dim)
 
@@ -489,23 +489,28 @@ class FuseConv(nn.Module):
 class ConvergeHead(nn.Module):
     def __init__(self, in_dim, up_ratio, kernel_size, padding, num_joints):
         super().__init__()
-        self.in_dim = in_dim     
+
         self.up_ratio = up_ratio
         self.num_joints = num_joints
 
-        self.conv = nn.Conv2d(in_dim*num_joints, (up_ratio**2)*num_joints, 
-                              kernel_size, 1, padding, 1, num_joints)
+        #self.conv = nn.Conv2d(in_dim*num_joints, (up_ratio**2)*num_joints, 
+        #                      kernel_size, 1, padding, 1, num_joints)
+        in_dim = in_dim * num_joints
+        self.dwconv = nn.Conv2d(in_dim, in_dim, kernel_size, 1, padding, 1, in_dim, False)
+        self.norm = nn.BatchNorm2d(in_dim)
+        self.pwconv = nn.Conv2d(in_dim, (up_ratio**2)*num_joints, 1)
         self.apply(self._init_weights)
 
     def forward(self, x):
-        hp = self.conv(x)
+        # hp = self.conv(x)
+        hp = self.pwconv(self.norm(self.dwconv(x)))
         hp = nn.functional.pixel_shuffle(hp, self.up_ratio)
         return hp
 
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
             nn.init.normal_(m.weight, std=0.001)
-            nn.init.constant_(m.bias, 0)
+            #nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.BatchNorm2d):
             nn.init.constant_(m.weight, 1)
             nn.init.constant_(m.bias, 0)
@@ -513,9 +518,9 @@ class ConvergeHead(nn.Module):
 @MODELS.register_module()
 class SRPoseHead(BaseHead):
     def __init__(self,
-                 in_channels=[64, 96, 960],
-                 out_channels=[48, 96, 192],
-                 num_joints=17,
+                 in_channels: Sequence[int],
+                 out_channels: Sequence[int],
+                 num_joints: int,
                  loss: ConfigType = dict(type='KeypointMSELoss', use_target_weight=True),
                  decoder: OptConfigType = None,
                  init_cfg: OptConfigType = None):

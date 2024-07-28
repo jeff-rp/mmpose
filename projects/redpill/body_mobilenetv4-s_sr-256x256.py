@@ -14,7 +14,7 @@ head_checkpoint = None
 log_interval=50
 
 # common setting
-num_keypoints = 17
+num_keypoints = 29
 input_size = (256, 256)
 
 train_cfg = dict(max_epochs=max_epochs, val_interval=val_interval)
@@ -61,7 +61,7 @@ model = dict(
     head=dict(
         type='SRPoseHead',
         in_channels=(64, 96, 960),
-        out_channels=[48, 96, 192],
+        out_channels=[64, 128, 256],
         num_joints=num_keypoints,
         loss=dict(type='KeypointMSELoss', use_target_weight=True, use_heatmap_weight=True),
         # loss=dict(type='KeypointRCELoss', use_target_weight=True, use_heatmap_weight=True),
